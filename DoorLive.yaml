@@ -1,0 +1,25 @@
+# ============================================
+# 프론트도어 실시간 검사 설정
+# ============================================
+
+mode: frontdoor
+
+# YOLO 모델 경로 (학습된 best.pt 파일 경로)
+yolo_model: 산학결과/[Final]Door_20251201_201740_tune/iter/weights/best.pt
+
+# DINOv2 모델 경로 (각 부위별 학습된 best.pt 파일 경로)
+dino_high: 산학결과/[Final]DoorDINO_high_2class_20251202_120038/weights/best.pt
+dino_mid: 산학결과/[Final]DoorDINO_mid_2class_20251202_204517/weights/best.pt
+dino_low: 산학결과/[Final]DoorDINO_low_2class_20251202_115110/weights/best.pt
+
+# Voting 방법 (hard 또는 soft)
+voting_method: soft
+
+# YOLO 신뢰도 임계값
+conf_threshold: 0.25
+
+# 사용 예시:
+# python live.py --config DoorLive.yaml --source 0
+# python live.py --config DoorLive.yaml --source 0 --obb  # OBB 모드
+# python live.py --config DoorLive.yaml --source 0 --device cpu  # CPU 사용
+

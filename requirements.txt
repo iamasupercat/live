@@ -1,0 +1,20 @@
+# 실시간 검사 시스템 필수 패키지
+
+# 딥러닝 프레임워크
+torch>=2.0.0
+torchvision>=0.15.0
+
+# YOLO 모델
+ultralytics>=8.0.0
+
+# 이미지 처리
+opencv-python>=4.8.0
+Pillow>=10.0.0
+numpy>=1.24.0
+
+# 설정 파일 처리
+PyYAML>=6.0
+
+# DINOv2 모델 (torch.hub를 통해 자동 다운로드)
+# facebookresearch/dinov2는 별도 설치 불필요
+

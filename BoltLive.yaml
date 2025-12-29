@@ -26,3 +26,6 @@ voting_method: soft
 
 # python live.py --config BoltLive.yaml --source 0 --obb --debug # 기본 웹캠
 # python live.py --config BoltLive.yaml --source "rtsp://192.168.1.100:554/stream"  # RTSP 네트워크 카메라
+# python live.py --config BoltLive.yaml --source "http://192.168.0.97:8080/video" --obb --debug # IP 웹캠
+
+# python live.py --config BoltLive.yaml --source "http://192.168.0.97:8080/video" --detect-only --obb

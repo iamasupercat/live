@@ -127,8 +127,11 @@ python live.py --config BoltLive.yaml --source 0 --obb
 # 디버그 모드
 python live.py --config BoltLive.yaml --source 0 --debug
 
-# 네트워크 카메라 사용
+# 네트워크 카메라 사용 (RTSP)
 python live.py --config BoltLive.yaml --source "rtsp://192.168.1.100:554/stream"
+
+# IP 웹캠 사용 (HTTP)
+python live.py --config BoltLive.yaml --source "http://192.168.1.100:8080/video"
 ```
 
 ## 카메라 소스 옵션 상세
@@ -144,12 +147,23 @@ python live.py --config BoltLive.yaml --source "rtsp://192.168.1.100:554/stream"
 
 ### 네트워크 카메라
 
-- **RTSP 카메라**: `--source "rtsp://192.168.1.100:554/stream"`
-  - RTSP 프로토콜을 사용하는 IP 카메라
-  - 인증이 필요한 경우: `"rtsp://username:password@192.168.1.100:554/stream1"`
+**사용 권장사항:**
+- 먼저 `/video`를 시도 (대부분의 IP 웹캠에서 기본 엔드포인트)
+- 작동하지 않으면 `/video.mjpg`를 시도
+- 카메라/앱마다 지원하는 엔드포인트가 다를 수 있으므로 제조사 문서 확인
 
-- **HTTP 카메라**: `--source "http://192.168.1.100:8080/video"`
+- **HTTP/IP 웹캠**: `--source "http://192.168.1.100:8080/video"`
   - HTTP 프로토콜을 사용하는 IP 카메라
+  - IP 웹캠 앱 (예: Android IP Webcam)에서 일반적으로 사용
+  - 대부분의 경우 `/video` 엔드포인트가 MJPEG 스트림을 제공함
+  
+- **MJPEG 스트림 (명시적)**: `"http://192.168.1.100:8080/video.mjpg"`
+  - Motion JPEG 형식의 비디오 스트림을 명시적으로 요청
+  - `/video`가 작동하지 않을 때 시도
+  - 연속된 JPEG 이미지를 빠르게 전송하여 비디오처럼 보이게 함
+  - 실시간 스트리밍에 적합하며 지연이 적음
+
+
 
 ### 비디오 파일
 

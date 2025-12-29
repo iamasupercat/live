@@ -1,6 +1,8 @@
 # 산학결과 폴더 (모델 파일들)
 산학결과/
 산학결과/**
+debug_crops/
+debug_crops/**
 
 # Python
 __pycache__/
@@ -58,3 +60,14 @@ Thumbs.db
 *.bak
 *.cache
 
+# 압축 파일
+*.zip
+*.rar
+*.7z
+*.tar
+*.gz
+*.bz2
+*.wim
+*.iso
+*.img
+*.cab

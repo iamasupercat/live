@@ -12,6 +12,63 @@ import yaml
 import math
 from math import cos, sin
 import os
+import threading
+import time  
+
+class ThreadedCamera:
+    """안전장치가 추가된 최신 프레임 카메라 클래스"""
+    def __init__(self, src=0):
+        self.capture = cv2.VideoCapture(src)
+        self.lock = threading.Lock() # 쓰레드 충돌 방지
+        self.status = False
+        self.frame = None
+        self.stopped = False
+        
+        # 카메라가 정상적으로 열렸는지 확인
+        if self.capture.isOpened():
+            self.status, self.frame = self.capture.read()
+            if self.status:
+                self.thread = threading.Thread(target=self.update, args=())
+                self.thread.daemon = True
+                self.thread.start()
+            else:
+                print("❌ 카메라에서 첫 프레임을 읽을 수 없습니다.")
+        else:
+            print(f"❌ 카메라를 열 수 없습니다: {src}")
+
+    def update(self):
+        while not self.stopped:
+            if self.capture.isOpened():
+                # 버퍼 없이 읽기 (grab -> retrieve 방식이 더 빠름)
+                status, frame = self.capture.read()
+                with self.lock:
+                    if status:
+                        self.status = status
+                        self.frame = frame
+                    else:
+                        # 읽기 실패 시 잠시 대기 (CPU 폭주 방지)
+                        time.sleep(0.01)
+            else:
+                time.sleep(0.1)
+
+    def read(self):
+        with self.lock:
+            return self.status, self.frame
+
+    def isOpened(self):
+        return self.capture.isOpened()
+
+    def release(self):
+        self.stopped = True
+        if hasattr(self, 'thread'):
+            self.thread.join(timeout=1.0)
+        self.capture.release()
+
+    def set(self, propId, value):
+        return self.capture.set(propId, value)
+    
+    def get(self, propId):
+        return self.capture.get(propId)
 
 
 class DINOv2Classifier(nn.Module):
@@ -33,7 +90,7 @@ class DINOv2Classifier(nn.Module):
 
 class RealtimeInspectionSystem:
     def __init__(self, mode='frontdoor', yolo_model_path=None, dino_models=None,
-                 device='cuda', conf_threshold=0.25, voting_method='soft', use_obb=False, debug=False):
+                 device='cuda', conf_threshold=0.25, voting_method='soft', use_obb=False, debug=False, detect_only=False):
         """
         실시간 카메라 검사 시스템
         """
@@ -43,6 +100,7 @@ class RealtimeInspectionSystem:
         self.voting_method = voting_method
         self.use_obb = use_obb
         self.debug = debug
+        self.detect_only = detect_only
         
         # YOLO 모델 로드
         print(f"🔄 YOLO 모델 로드 중: {yolo_model_path}")
@@ -61,21 +119,24 @@ class RealtimeInspectionSystem:
             print(f"❌ YOLO 모델 로드 실패: {e}")
             raise
         
-        # DINOv2 모델 로드 및 클래스 수 확인
+        # DINOv2 모델 로드 및 클래스 수 확인 (detect_only 모드가 아닐 때만)
         self.dino_models = {}
         self.dino_num_classes = {}  # 각 모델의 클래스 수 저장
         
-        if self.mode == 'frontdoor':
-            for part in ['high', 'mid', 'low']:
-                print(f"🔄 DINOv2 모델 로드 중 ({part}): {dino_models[part]}")
-                model, num_classes = self._load_dino_model(dino_models[part])
-                self.dino_models[part] = model
-                self.dino_num_classes[part] = num_classes
-        else:  # bolt
-            print(f"🔄 DINOv2 모델 로드 중 (bolt): {dino_models['bolt']}")
-            model, num_classes = self._load_dino_model(dino_models['bolt'])
-            self.dino_models['bolt'] = model
-            self.dino_num_classes['bolt'] = num_classes
+        if not self.detect_only:
+            if self.mode == 'frontdoor':
+                for part in ['high', 'mid', 'low']:
+                    print(f"🔄 DINOv2 모델 로드 중 ({part}): {dino_models[part]}")
+                    model, num_classes = self._load_dino_model(dino_models[part])
+                    self.dino_models[part] = model
+                    self.dino_num_classes[part] = num_classes
+            else:  # bolt
+                print(f"🔄 DINOv2 모델 로드 중 (bolt): {dino_models['bolt']}")
+                model, num_classes = self._load_dino_model(dino_models['bolt'])
+                self.dino_models['bolt'] = model
+                self.dino_num_classes['bolt'] = num_classes
+        else:
+            print(f"ℹ️  검출 전용 모드: DINOv2 모델 로드 생략")
         
         # DINOv2 전처리
         self.transform = transforms.Compose([
@@ -123,20 +184,24 @@ class RealtimeInspectionSystem:
         print(f"  - 모드: {self.mode}")
         print(f"  - 디바이스: {self.device}")
         print(f"  - YOLO 신뢰도: {self.conf_threshold}")
-        print(f"  - 조건 유지 시간: {self.required_duration}초")
-        print(f"  - Voting 방법: {self.voting_method}")
+        if self.detect_only:
+            print(f"  - 검출 전용 모드: 활성화 (검사 기능 비활성화)")
+        else:
+            print(f"  - 조건 유지 시간: {self.required_duration}초")
+            print(f"  - Voting 방법: {self.voting_method}")
         if self.use_obb:
             print(f"  - OBB 모드: 활성화")
         
-        # DINO 클래스 수 출력
-        if self.mode == 'frontdoor':
-            for part in ['high', 'mid', 'low']:
-                num_cls = self.dino_num_classes.get(part, 2)
-                mode_text = "4-class" if num_cls == 4 else "2-class (simple)"
-                print(f"  - DINO {part}: {mode_text}")
-        else:
-            # 볼트는 항상 2-class
-            print(f"  - DINO bolt: 2-class (simple)")
+        # DINO 클래스 수 출력 (detect_only 모드가 아닐 때만)
+        if not self.detect_only:
+            if self.mode == 'frontdoor':
+                for part in ['high', 'mid', 'low']:
+                    num_cls = self.dino_num_classes.get(part, 2)
+                    mode_text = "4-class" if num_cls == 4 else "2-class (simple)"
+                    print(f"  - DINO {part}: {mode_text}")
+            else:
+                # 볼트는 항상 2-class
+                print(f"  - DINO bolt: 2-class (simple)")
     
     def _load_dino_model(self, model_path):
         """DINOv2 모델 체크포인트 로드"""
@@ -178,7 +243,8 @@ class RealtimeInspectionSystem:
         print(f"🎥 카메라 시작: {source}")
         print(f"{'='*60}\n")
         
-        cap = cv2.VideoCapture(source)
+        # ThreadedCamera로 교체
+        cap = ThreadedCamera(source)    
         
         if not cap.isOpened():
             print(f"❌ 카메라를 열 수 없습니다: {source}")
@@ -209,8 +275,12 @@ class RealtimeInspectionSystem:
                 cap.release()
                 return
         
-        print(f"📋 대기 중... (조건이 만족되면 자동으로 캡처됩니다)")
-        print(f"   종료하려면 'q' 키를 누르세요\n")
+        if self.detect_only:
+            print(f"📋 검출 전용 모드: YOLO 검출 결과만 표시됩니다")
+            print(f"   종료하려면 'q' 키를 누르세요\n")
+        else:
+            print(f"📋 대기 중... (조건이 만족되면 자동으로 캡처됩니다)")
+            print(f"   종료하려면 'q' 키를 누르세요\n")
         
         try:
             while True:
@@ -252,11 +322,25 @@ class RealtimeInspectionSystem:
                 elif hasattr(results, 'boxes'):
                     boxes = results.boxes
                 
-                # 조건 확인
-                condition_satisfied, detections = self._check_condition(boxes)
-                
                 # 화면에 표시
                 display_frame = self._draw_detections(frame.copy(), boxes)
+                
+                # 검출 전용 모드인 경우 검사 없이 계속 진행
+                if self.detect_only:
+                    # 검출된 객체 개수 표시
+                    num_detections = len(boxes) if boxes is not None else 0
+                    info_text = f"Detections: {num_detections}"
+                    cv2.putText(display_frame, info_text, (10, 30),
+                               cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2)
+                    cv2.imshow('Real-time Inspection', display_frame)
+                    
+                    if cv2.waitKey(1) & 0xFF == ord('q'):
+                        print("\n사용자가 종료함")
+                        break
+                    continue
+                
+                # 조건 확인
+                condition_satisfied, detections = self._check_condition(boxes)
                 
                 # 조건 만족 여부에 따른 처리
                 if condition_satisfied:
@@ -783,6 +867,7 @@ def main():
     parser.add_argument('--device', type=str, default='cuda', choices=['cuda', 'cpu'], help='디바이스 (기본값: cuda)')
     parser.add_argument('--obb', action='store_true', help='OBB(Oriented Bounding Box) 모드 사용')
     parser.add_argument('--debug', action='store_true', help='디버그 모드: 크롭 이미지를 debug_crops 폴더에 저장')
+    parser.add_argument('--detect-only', action='store_true', help='검출 전용 모드: YOLO 검출만 수행하고 검사는 하지 않음')
     
     args = parser.parse_args()
     config = load_config(args.config)
@@ -817,7 +902,8 @@ def main():
         conf_threshold=conf_threshold,
         voting_method=voting_method,
         use_obb=args.obb,
-        debug=args.debug
+        debug=args.debug,
+        detect_only=args.detect_only
     )
     
     system.dino_mode = dino_mode

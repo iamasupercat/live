@@ -19,7 +19,15 @@ voting_method: soft
 conf_threshold: 0.25
 
 # 사용 예시:
-# python live.py --config DoorLive.yaml --source 0
-# python live.py --config DoorLive.yaml --source 0 --obb  # OBB 모드
-# python live.py --config DoorLive.yaml --source 0 --device cpu  # CPU 사용
+# --source 옵션:
+#   - source 0: 컴퓨터에 연결된 기본 웹캠
+#   - source 1: 외부 USB로 연결된 카메라
+#   - "rtsp://..." : 네트워크 카메라 (RTSP URL)
+#
 
+
+# python live.py --config DoorLive.yaml --source 0 --obb --debug # 기본 웹캠
+# python live.py --config DoorLive.yaml --source 1 --obb --debug # USB 카메라
+# python live.py --config DoorLive.yaml --source "http://192.168.0.97:8080/video" --obb --debug # IP 웹캠
+
+# python live.py --config DoorLive.yaml --source "http://192.168.0.97:8080/video" --detect-only --obb

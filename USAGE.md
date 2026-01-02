@@ -88,6 +88,12 @@ python live.py --config <설정파일.yaml> --source <카메라소스>
   - 크롭된 이미지를 `debug_crops/` 폴더에 저장
   - 디버깅 및 검증용
 
+- `--detect-only`: 검출 전용 모드 활성화
+  - YOLO 검출만 수행하고 DINOv2 검사는 수행하지 않음
+  - 검출 결과만 화면에 표시
+  - 검사 조건 확인 및 타이머 없이 실시간 검출만 확인 가능
+  - YOLO 모델 테스트 및 검출 성능 확인용
+
 ## 사용 예시
 
 ### 프론트도어 검사
@@ -108,6 +114,9 @@ python live.py --config DoorLive.yaml --source 0 --device cpu
 # 디버그 모드 (크롭 이미지 저장)
 python live.py --config DoorLive.yaml --source 0 --debug
 
+# 검출 전용 모드 (검사 없이 YOLO 검출만)
+python live.py --config DoorLive.yaml --source 0 --detect-only
+
 # 모든 옵션 조합
 python live.py --config DoorLive.yaml --source 0 --obb --debug --device cpu
 ```
@@ -126,6 +135,9 @@ python live.py --config BoltLive.yaml --source 0 --obb
 
 # 디버그 모드
 python live.py --config BoltLive.yaml --source 0 --debug
+
+# 검출 전용 모드 (검사 없이 YOLO 검출만)
+python live.py --config BoltLive.yaml --source 0 --detect-only
 
 # 네트워크 카메라 사용 (RTSP)
 python live.py --config BoltLive.yaml --source "rtsp://192.168.1.100:554/stream"
@@ -221,6 +233,21 @@ python live.py --config BoltLive.yaml --source "http://192.168.1.100:8080/video"
    - 하나라도 불량이면 전체 불량으로 판정
    - 결과를 터미널에 출력
 
+### 검출 전용 모드 (`--detect-only`)
+
+검출 전용 모드에서는 검사 과정 없이 YOLO 검출만 수행합니다.
+
+1. **실시간 검출**
+   - 조건 확인 없이 계속 YOLO 검출 수행
+   - 검출된 객체를 실시간으로 화면에 표시
+   - 검출된 객체 개수가 화면 상단에 표시됨 (예: "Detections: 3")
+
+2. **종료**
+   - 'q' 키를 누르면 프로그램 종료
+   - 검사는 수행되지 않음
+
+**참고**: 검출 전용 모드는 프론트도어와 볼트 모드 모두에서 동일하게 동작합니다.
+
 ## 설정 파일 (YAML)
 
 ### 프론트도어 설정 예시 (DoorLive.yaml)
@@ -302,6 +329,35 @@ python live.py --config BoltLive.yaml --source 0 --obb
 ### 사용법
 ```bash
 python live.py --config BoltLive.yaml --source 0 --debug
+```
+
+## 검출 전용 모드
+
+검출 전용 모드는 YOLO 검출만 수행하고 DINOv2 검사는 수행하지 않는 모드입니다.
+
+### 특징
+- YOLO 모델의 검출 성능만 확인 가능
+- 검사 조건 확인 및 타이머 없이 실시간 검출 결과만 표시
+- 검출된 객체 개수가 화면에 표시됨
+- DINOv2 모델을 로드하지 않아 시작 속도가 빠름
+- YOLO 모델 테스트 및 검출 성능 확인용으로 유용
+
+### 동작 방식
+- 일반 모드와 달리 조건 만족 확인 없이 계속 검출만 수행
+- 화면에 검출된 객체 개수 표시 (예: "Detections: 3")
+- 검출 결과는 실시간으로 화면에 표시됨
+- 'q' 키로 종료 가능
+
+### 사용법
+```bash
+# 프론트도어 검출 전용 모드
+python live.py --config DoorLive.yaml --source 0 --detect-only
+
+# 볼트 검출 전용 모드
+python live.py --config BoltLive.yaml --source 0 --detect-only
+
+# OBB 모드와 함께 사용
+python live.py --config BoltLive.yaml --source 0 --detect-only --obb
 ```
 
 ## 화면 조작

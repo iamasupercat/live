@@ -3,6 +3,10 @@
 산학결과/**
 debug_crops/
 debug_crops/**
+archive/
+archive/**
+video/
+video/**
 
 # Python
 __pycache__/

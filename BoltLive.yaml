@@ -16,16 +16,10 @@ conf_threshold: 0.25
 # Voting 방법 (선택, 기본값: soft)
 voting_method: soft
 
-# 사용 예시:
-# --source 옵션:
-#   - source 0: 컴퓨터에 연결된 기본 웹캠
-#   - source 1: 외부 USB로 연결된 카메라
-#   - "rtsp://..." : 네트워크 카메라 (RTSP URL)
-#
 
-
-# python live.py --config BoltLive.yaml --source 0 --obb --debug # 기본 웹캠
-# python live.py --config BoltLive.yaml --source "rtsp://192.168.1.100:554/stream"  # RTSP 네트워크 카메라
+# ============================================
+# 사용 예시
+# ============================================
 # python live.py --config BoltLive.yaml --source "http://192.168.0.97:8080/video" --obb --debug # IP 웹캠
-
-# python live.py --config BoltLive.yaml --source "http://192.168.0.97:8080/video" --detect-only --obb
+# python live.py --config BoltLive.yaml --source "http://192.168.0.97:8080/video" --detect-only --obb # yolo 박스만 탐지
+# python live.py --config BoltLive.yaml --source "[영상파일명].mp4" --detect-only # 비디오 파일 처리, yolo 박스만 탐지

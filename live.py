@@ -164,7 +164,7 @@ class RealtimeInspectionSystem:
         if self.mode == 'frontdoor':
             self.required_duration = 3.0  # 3초
         else:  # bolt
-            self.required_duration = 5.0  # 5초
+            self.required_duration = 3.0  # 3초
         
         # YOLO 클래스 매핑 (bolt 모드용)
         self.bolt_class_names = {
@@ -412,17 +412,17 @@ class RealtimeInspectionSystem:
                 # 화면에 표시
                 display_frame = self._draw_detections(frame.copy(), boxes)
                 
-                # 검출 전용 모드인 경우 검사 없이 계속 진행
+                # 검출 전용 모드인 경우 YOLO 검출만 수행 (조건 확인, 타이머, 검사 없음)
                 if self.detect_only:
                     # 검출된 객체 개수 표시
                     num_detections = len(boxes) if boxes is not None else 0
                     info_text = f"Detections: {num_detections}"
                     cv2.putText(display_frame, info_text, (10, 30),
                                cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2)
-                
-                # 비디오 파일인 경우 모든 프레임을 출력 비디오에 저장
-                if is_video_file and video_writer and video_writer.isOpened():
-                    video_writer.write(display_frame)
+                    
+                    # 비디오 파일인 경우 모든 프레임을 출력 비디오에 저장
+                    if is_video_file and video_writer and video_writer.isOpened():
+                        video_writer.write(display_frame)
                     
                     cv2.imshow('Real-time Inspection', display_frame)
                     
@@ -436,7 +436,12 @@ class RealtimeInspectionSystem:
                     if key == ord('q'):
                         print("\n사용자가 종료함")
                         break
-                    continue
+                    continue  # YOLO 검출만 하고 계속 진행 (조건 확인, 타이머, 검사 건너뜀)
+                
+                # 일반 모드: 조건 확인 및 검사 수행
+                # 비디오 파일인 경우 모든 프레임을 출력 비디오에 저장
+                if is_video_file and video_writer and video_writer.isOpened():
+                    video_writer.write(display_frame)
                 
                 # 조건 확인
                 condition_satisfied, detections = self._check_condition(boxes)

@@ -5,12 +5,12 @@
 mode: frontdoor
 
 # YOLO 모델 경로 (학습된 best.pt 파일 경로)
-yolo_model: 산학결과/[Final]Door_20251201_201740_tune/iter/weights/best.pt
+yolo_model: 모델/Door_20260107_094426/weights/best.pt
 
 # DINOv2 모델 경로 (각 부위별 학습된 best.pt 파일 경로)
-dino_high: 산학결과/[Final]DoorDINO_high_2class_20251202_120038/weights/best.pt
-dino_mid: 산학결과/[Final]DoorDINO_mid_2class_20251202_204517/weights/best.pt
-dino_low: 산학결과/[Final]DoorDINO_low_2class_20251202_115110/weights/best.pt
+dino_high: 모델/DoorDINO_high_2class_20260107_113723/weights/best.pt
+dino_mid: 모델/DoorDINO_mid_2class_20260107_143115/weights/best.pt
+dino_low: 모델/DoorDINO_low_2class_20260107_143130/weights/best.pt
 
 # Voting 방법 (hard 또는 soft)
 voting_method: soft

@@ -5,10 +5,10 @@
 mode: bolt
 
 # YOLO 모델 경로 (학습된 best.pt 파일 경로)
-yolo_model: ./산학결과/[Final]Bolt_20251201_111615_tune/iter/weights/best.pt
+yolo_model: ./모델/Bolt_20260107_094359/weights/best.pt
 
 # DINOv2 모델 경로 (학습된 best.pt 파일 경로)
-dino_bolt: ./산학결과/[Final]BoltDINO_4class_20251202_123616/weights/best.pt
+dino_bolt: ./모델/BoltDINO_20260107_113625/weights/best.pt
 
 # YOLO 신뢰도 임계값
 conf_threshold: 0.25
